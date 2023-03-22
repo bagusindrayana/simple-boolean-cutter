@@ -1,6 +1,11 @@
-
 # Simple Boolean Cutter
 add modifier boolean to the target object, and the new object add will become cutter
+
+## Instalation
+![Download Zip](https://iili.io/Hhl74Uv.png)
+- download repo as zip
+- open blender -> preferences -> addons -> install -> select zip file, and check the addon
+- addon menu will appear in the 3D view sidepanel (left panel or just press N)
 
 ## Addon Menu
 ![Addon Menu](https://iili.io/HhcyWVs.png)
