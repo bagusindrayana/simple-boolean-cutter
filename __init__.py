@@ -16,45 +16,38 @@ from bpy.types import Panel, Operator
 from bpy.app.handlers import persistent
 
 
-previous_objects = set([])
-useBoolean = False
-currentObject = None
-
 
 class OBJECT_OT_AddAssetOperator(Operator):
     bl_idname = "object.add_asset_operator"
     bl_label = "Add Asset Operator"
+    bl_options = {'UNDO'}
     
     @classmethod
     def poll(cls, context):
         return context.active_object is not None
 
     def execute(self, context):
-        global currentObject
-        currentObject = context.active_object
-        bpy.context.scene.cursor.location = currentObject.location
         context.scene.asset_target_object = context.active_object
+        bpy.context.scene.cursor.location = context.scene.asset_target_object.location
         return {'FINISHED'}
 
 class OBJECT_OT_ApplyModifierOperator(Operator):
     bl_idname = "object.apply_modifier_operator"
     bl_label = "Apply Modifier Operator"
-  
+    bl_options = {'UNDO'}
 
     def execute(self, context):
-        global currentObject
-        bpy.context.view_layer.objects.active = currentObject
-        for modifier in currentObject.modifiers:
+        context.view_layer.objects.active = context.scene.asset_target_object
+        for modifier in context.scene.asset_target_object.modifiers:
             try:
                 if modifier and modifier.type == "BOOLEAN":
-                    bpy.ops.object.modifier_apply(modifier=modifier.name)
+                    bpy.ops.object.modifier_apply({"active_object": context.scene.asset_target_object},modifier=modifier.name)
             except RuntimeError as ex:
                 # print the error incase its important... but continue
                 print(ex)
-        
         _parent = bpy.data.collections.get("SimpleBC_Collections")
         if _parent:
-            _child = _parent.children.get(currentObject.name)
+            _child = _parent.children.get(context.scene.asset_target_object.name)
             if _child:
                 for _obj in _child.objects:
                     bpy.data.objects.remove(_obj, do_unlink=True)
@@ -71,15 +64,8 @@ class SBC_AssetPanel(Panel):
     @classmethod
     def poll(cls, context):
         return context.active_object is not None
-    
-    def execute(self, context):
-        global useBoolean,currentObject
-        if scene.use_boolean_modifier is not None:
-            useBoolean = scene.use_boolean_modifier
-        return {'FINISHED'}
 
     def draw(self, context):
-        global useBoolean,currentObject
         layout = self.layout
         scene = context.scene
 
@@ -95,11 +81,7 @@ class SBC_AssetPanel(Panel):
             row = layout.row()
             row.operator("object.apply_modifier_operator", text="Apply Boolean")
             
-        if context.scene.asset_target_object is not None:
-            currentObject = context.scene.asset_target_object
-        if scene.use_boolean_modifier is not None:
-            useBoolean = scene.use_boolean_modifier
-        if useBoolean:
+        if scene.use_boolean_modifier:
             layout.row().label(text="List Boolean : ")
             if context.scene.asset_target_object is not None:
                 for mod in context.scene.asset_target_object.modifiers:
@@ -108,19 +90,22 @@ class SBC_AssetPanel(Panel):
                         _row.label(text=mod.name)
             
 
+class ObjectList(bpy.types.PropertyGroup):
+    object: bpy.props.PointerProperty(type=bpy.types.Object)
+
 def register():
-    global previous_objects,useBoolean,currentObject
-    previous_objects = set([])
-    useBoolean = False
-    currentObject = None
     bpy.app.handlers.depsgraph_update_post.clear()
     bpy.types.Scene.use_boolean_modifier = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.dynamic_target = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.asset_target_object = bpy.props.PointerProperty(type=bpy.types.Object)
+    
     bpy.utils.register_class(OBJECT_OT_AddAssetOperator)
     bpy.utils.register_class(OBJECT_OT_ApplyModifierOperator)
     bpy.utils.register_class(SBC_AssetPanel)
     bpy.app.handlers.depsgraph_update_post.append(new_object_added)
+
+    bpy.utils.register_class(ObjectList)
+    bpy.types.Scene.previous_objects = bpy.props.CollectionProperty(type=ObjectList)
 
 def unregister():
     bpy.utils.unregister_class(OBJECT_OT_AddAssetOperator)
@@ -129,6 +114,7 @@ def unregister():
     del bpy.types.Scene.use_boolean_modifier
     del bpy.types.Scene.dynamic_target
     del bpy.types.Scene.asset_target_object
+    del bpy.types.Scene.previous_objects
     bpy.app.handlers.depsgraph_update_post.remove(new_object_added)
 
 
@@ -147,12 +133,11 @@ def find_or_create_collection(collection_name):
     
 
 def add_boolean_modifier(obj):
-    global currentObject
     coll_target = find_or_create_collection("SimpleBC_Collections")
-    if currentObject != None:
+    if bpy.context.scene.asset_target_object != None and bpy.context.scene.asset_target_object != obj:
         print("Add Modifier: ", obj.name, type(obj))
         obj.display_type = "WIRE"
-        selected_obj = currentObject
+        selected_obj = bpy.context.scene.asset_target_object
         bool_mod = selected_obj.modifiers.new(name=obj.name+" Boolean", type="BOOLEAN")
         bool_mod.object = obj
         bool_mod.operation = 'DIFFERENCE'
@@ -180,17 +165,26 @@ def add_boolean_modifier(obj):
             coll_target.children.link(_child)
     
     
-@persistent
+# @persistent
 def new_object_added(scene):
-    global previous_objects,useBoolean
     current_objects = set(bpy.data.objects)
-    new_objects = current_objects - previous_objects
-    previous_objects = current_objects
+    _list_object = []
+    for _ol in bpy.context.scene.previous_objects:
+       _list_object.append(_ol.object)
+    new_objects = current_objects - set(_list_object)
+    
+    _tmp_list_object = []
+    for _co in current_objects:
+        _new = bpy.context.scene.previous_objects.add()
+        _new.object = _co
+        #_tmp_list_object.append(_new)
+   
+    #bpy.context.scene.previous_objects.objects = _tmp_list_object
     if not new_objects:
         return
     for obj in new_objects:
         print("New object added: ", obj.name, type(obj))
-        if useBoolean:
+        if scene.use_boolean_modifier:
             add_boolean_modifier(obj)
 
 
