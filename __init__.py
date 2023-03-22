@@ -109,7 +109,6 @@ class SBC_AssetPanel(Panel):
             
 
 def register():
-    print("testing")
     global previous_objects,useBoolean,currentObject
     previous_objects = set([])
     useBoolean = False
@@ -183,7 +182,6 @@ def add_boolean_modifier(obj):
     
 @persistent
 def new_object_added(scene):
-    print("New Object")
     global previous_objects,useBoolean
     current_objects = set(bpy.data.objects)
     new_objects = current_objects - previous_objects
