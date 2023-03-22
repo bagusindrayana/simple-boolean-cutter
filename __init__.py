@@ -2,9 +2,9 @@ bl_info = {
     "name": "Simple Boolean Cut",
     "author" : "bagusindrayana",
     "description" : "Simple plugin to add boolean modifier to object",
-    'blender': (3, 3, 0),
-    'version': (0, 1, 0),
-    'category': 'General',
+    "version": (0, 1, 0),
+    "blender": (2, 80, 0),
+    "category": 'General',
     'location': '3D View',
     'support': 'COMMUNITY',
     'warning': '',
@@ -13,8 +13,8 @@ bl_info = {
 }
 import bpy  
 from bpy.types import Panel, Operator
+from bpy.app.handlers import persistent
 
-bpy.app.handlers.depsgraph_update_post.clear()
 
 previous_objects = set([])
 useBoolean = False
@@ -109,12 +109,19 @@ class SBC_AssetPanel(Panel):
             
 
 def register():
+    print("testing")
+    global previous_objects,useBoolean,currentObject
+    previous_objects = set([])
+    useBoolean = False
+    currentObject = None
+    bpy.app.handlers.depsgraph_update_post.clear()
     bpy.types.Scene.use_boolean_modifier = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.dynamic_target = bpy.props.BoolProperty(default=False)
     bpy.types.Scene.asset_target_object = bpy.props.PointerProperty(type=bpy.types.Object)
     bpy.utils.register_class(OBJECT_OT_AddAssetOperator)
     bpy.utils.register_class(OBJECT_OT_ApplyModifierOperator)
     bpy.utils.register_class(SBC_AssetPanel)
+    bpy.app.handlers.depsgraph_update_post.append(new_object_added)
 
 def unregister():
     bpy.utils.unregister_class(OBJECT_OT_AddAssetOperator)
@@ -123,6 +130,7 @@ def unregister():
     del bpy.types.Scene.use_boolean_modifier
     del bpy.types.Scene.dynamic_target
     del bpy.types.Scene.asset_target_object
+    bpy.app.handlers.depsgraph_update_post.remove(new_object_added)
 
 
 def find_or_create_collection(collection_name):
@@ -142,8 +150,6 @@ def find_or_create_collection(collection_name):
 def add_boolean_modifier(obj):
     global currentObject
     coll_target = find_or_create_collection("SimpleBC_Collections")
-    print(coll_target)
-    active_obj = bpy.context.active_object  
     if currentObject != None:
         print("Add Modifier: ", obj.name, type(obj))
         obj.display_type = "WIRE"
@@ -175,8 +181,9 @@ def add_boolean_modifier(obj):
             coll_target.children.link(_child)
     
     
-
+@persistent
 def new_object_added(scene):
+    print("New Object")
     global previous_objects,useBoolean
     current_objects = set(bpy.data.objects)
     new_objects = current_objects - previous_objects
@@ -188,7 +195,6 @@ def new_object_added(scene):
         if useBoolean:
             add_boolean_modifier(obj)
 
-bpy.app.handlers.depsgraph_update_post.append(new_object_added)
 
 if __name__ == "__main__":
     register()
