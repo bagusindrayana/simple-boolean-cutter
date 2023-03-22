@@ -3,11 +3,12 @@
 add modifier boolean to the target object, and the new object add will become cutter
 
 ## Addon Menu
-![Addon Menu](https://iili.io/HhYzjRa.png)
+![Addon Menu](https://iili.io/HhcyWVs.png)
 
 - `Use Boolean Cut` check this to begin use the addon
 - select object and press `Set Target` to set the target object or just search the object in the search box
 - now try add new object, and (all) new object will become cutter
+- `Apply Boolean` apply all modifier boolean and remove all cutter object
 
 ![Cutter](https://iili.io/HhYuAlI.png)
 
