@@ -1,5 +1,5 @@
 bl_info = {
-    "name": "Simple Boolean Cut",
+    "name": "Simple Boolean Cutter",
     "author" : "bagusindrayana",
     "description" : "Simple plugin to add boolean modifier to object",
     "version": (0, 1, 0),
