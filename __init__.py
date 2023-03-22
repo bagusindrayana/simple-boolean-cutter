@@ -2,7 +2,7 @@ bl_info = {
     "name": "Simple Boolean Cutter",
     "author" : "bagusindrayana",
     "description" : "Simple plugin to add boolean modifier to object",
-    "version": (0, 1, 0),
+    "version": (0, 1, 1),
     "blender": (2, 80, 0),
     "category": 'General',
     'location': '3D View',
