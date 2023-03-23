@@ -167,15 +167,19 @@ def add_boolean_modifier(obj):
     
 # @persistent
 def new_object_added(scene):
+    if scene.asset_target_object == None:
+        return
+    if scene.use_boolean_modifier == None or scene.use_boolean_modifier == False:
+        return
     current_objects = set(bpy.data.objects)
     _list_object = []
-    for _ol in bpy.context.scene.previous_objects:
+    for _ol in scene.previous_objects:
        _list_object.append(_ol.object)
     new_objects = current_objects - set(_list_object)
     
     _tmp_list_object = []
     for _co in current_objects:
-        _new = bpy.context.scene.previous_objects.add()
+        _new = scene.previous_objects.add()
         _new.object = _co
         #_tmp_list_object.append(_new)
    
