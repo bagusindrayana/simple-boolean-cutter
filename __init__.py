@@ -111,6 +111,7 @@ def unregister():
     bpy.utils.unregister_class(OBJECT_OT_AddAssetOperator)
     bpy.utils.unregister_class(OBJECT_OT_ApplyModifierOperator)
     bpy.utils.unregister_class(SBC_AssetPanel)
+    bpy.utils.unregister_class(ObjectList)
     del bpy.types.Scene.use_boolean_modifier
     del bpy.types.Scene.dynamic_target
     del bpy.types.Scene.asset_target_object
